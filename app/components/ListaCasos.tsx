@@ -1,21 +1,42 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useTransition, useRef } from 'react'
 import Link from 'next/link'
 import { PersonaDesaparecida } from '../lib/types'
 import CasoCard from './CasoCard'
+import { buscarPersonas } from '../actions'
+import { PAGE_SIZE } from '../lib/constants'
 
-export default function ListaCasos({ casos }: { casos: PersonaDesaparecida[] }) {
+export default function ListaCasos({ initialCasos }: { initialCasos: PersonaDesaparecida[] }) {
+  const [casos, setCasos] = useState(initialCasos)
   const [query, setQuery] = useState('')
   const [estado, setEstado] = useState('todos')
+  const [hasMore, setHasMore] = useState(initialCasos.length === PAGE_SIZE)
+  const [isPending, startTransition] = useTransition()
+  const isFirstRender = useRef(true)
 
-  const filtrados = useMemo(() => {
-    return casos.filter(p => {
-      const matchQ = query.trim() === '' || p.nombre.toLowerCase().includes(query.trim().toLowerCase())
-      const matchEstado = estado === 'todos' || p.estado === estado
-      return matchQ && matchEstado
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    const timer = setTimeout(() => {
+      startTransition(async () => {
+        const results = await buscarPersonas(query, estado, 0) as PersonaDesaparecida[]
+        setCasos(results)
+        setHasMore(results.length === PAGE_SIZE)
+      })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [query, estado])
+
+  function loadMore() {
+    startTransition(async () => {
+      const more = await buscarPersonas(query, estado, casos.length) as PersonaDesaparecida[]
+      setCasos(prev => [...prev, ...more])
+      setHasMore(more.length === PAGE_SIZE)
     })
-  }, [casos, query, estado])
+  }
 
   return (
     <>
@@ -38,7 +59,7 @@ export default function ListaCasos({ casos }: { casos: PersonaDesaparecida[] }) 
         </select>
       </div>
 
-      {filtrados.length === 0 ? (
+      {isPending && casos.length === 0 ? null : casos.length === 0 ? (
         <div className="py-20 text-center text-gray-400">
           <p className="text-base">No se encontraron casos{query ? ` para "${query}"` : ''}.</p>
           <Link href="/reportar" className="mt-4 inline-block text-sm text-red-700 hover:underline">
@@ -47,14 +68,22 @@ export default function ListaCasos({ casos }: { casos: PersonaDesaparecida[] }) 
         </div>
       ) : (
         <>
-          <p className="text-xs text-gray-400 mb-4">
-            {filtrados.length} {filtrados.length === 1 ? 'caso' : 'casos'}{query ? ` · "${query}"` : ''}
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {filtrados.map(persona => (
+          <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 transition-opacity ${isPending ? 'opacity-50' : 'opacity-100'}`}>
+            {casos.map(persona => (
               <CasoCard key={persona.id} persona={persona} />
             ))}
           </div>
+          {hasMore && (
+            <div className="mt-8 text-center">
+              <button
+                onClick={loadMore}
+                disabled={isPending}
+                className="border border-gray-300 hover:border-gray-900 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-40 px-6 py-2 rounded transition-colors"
+              >
+                {isPending ? 'Cargando...' : 'Mostrar más'}
+              </button>
+            </div>
+          )}
         </>
       )}
     </>
