@@ -1,65 +1,112 @@
-import Image from "next/image";
+import { getSupabaseAdmin } from './lib/supabase'
+import { Suspense } from 'react'
+import CasoCard from './components/CasoCard'
+import Buscador from './components/Buscador'
+import { PersonaDesaparecida } from './lib/types'
+import Link from 'next/link'
 
-export default function Home() {
+async function getCasos(q: string, estado: string): Promise<PersonaDesaparecida[]> {
+  const supabase = getSupabaseAdmin()
+
+  let query = supabase
+    .from('personas_desaparecidas')
+    .select('*')
+    .neq('estado', 'removido')
+    .order('creado_en', { ascending: false })
+    .limit(200)
+
+  if (q) query = query.ilike('nombre', `%${q}%`)
+  if (estado && estado !== 'todos') query = query.eq('estado', estado)
+
+  const { data } = await query
+  return (data as PersonaDesaparecida[]) ?? []
+}
+
+async function getStats() {
+  const supabase = getSupabaseAdmin()
+  const [{ count: desaparecidos }, { count: encontrados }] = await Promise.all([
+    supabase.from('personas_desaparecidas').select('*', { count: 'exact', head: true }).eq('estado', 'desaparecido'),
+    supabase.from('personas_desaparecidas').select('*', { count: 'exact', head: true }).eq('estado', 'encontrado'),
+  ])
+  return { desaparecidos: desaparecidos ?? 0, encontrados: encontrados ?? 0 }
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; estado?: string }>
+}) {
+  const params = await searchParams
+  const q = params.q ?? ''
+  const estado = params.estado ?? 'todos'
+
+  const [casos, stats] = await Promise.all([getCasos(q, estado), getStats()])
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="max-w-5xl mx-auto px-4 py-8">
+
+      {/* Hero */}
+      <div className="mb-12 max-w-2xl">
+        <h1 className="text-3xl font-semibold text-gray-900 leading-snug mb-3">
+          Ayúdanos a encontrarlos
+        </h1>
+        <p className="text-gray-600 text-base leading-relaxed mb-2">
+          Tras el terremoto que sacudió a Venezuela, miles de personas quedaron desaparecidas. Sus familias las buscan desesperadamente.
+        </p>
+        <p className="text-gray-600 text-base leading-relaxed mb-6">
+          Si conoces a alguien desaparecido, repórtalo aquí. Si sabes que fue encontrado, márcalo.
+        </p>
+        <Link
+          href="/reportar"
+          className="inline-block bg-red-700 hover:bg-red-800 text-white text-sm font-medium px-5 py-2.5 rounded transition-colors"
+        >
+          Reportar persona desaparecida
+        </Link>
+      </div>
+
+      {/* Stats */}
+      <div className="flex items-baseline gap-8 mb-8 flex-wrap">
+        <div>
+          <span className="text-3xl font-bold text-gray-900">{(stats.desaparecidos + stats.encontrados).toLocaleString('es-VE')}</span>
+          <span className="ml-2 text-sm text-gray-500">reportados</span>
+        </div>
+        <div>
+          <span className="text-3xl font-bold text-red-700">{stats.desaparecidos.toLocaleString('es-VE')}</span>
+          <span className="ml-2 text-sm text-gray-500">desaparecidos</span>
+        </div>
+        <div>
+          <span className="text-3xl font-bold text-green-700">{stats.encontrados.toLocaleString('es-VE')}</span>
+          <span className="ml-2 text-sm text-gray-500">encontrados</span>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="mb-6">
+        <Suspense fallback={null}>
+          <Buscador />
+        </Suspense>
+      </div>
+
+      {/* Results */}
+      {casos.length === 0 ? (
+        <div className="py-20 text-center text-gray-400">
+          <p className="text-base">No se encontraron casos{q ? ` para "${q}"` : ''}.</p>
+          <Link href="/reportar" className="mt-4 inline-block text-sm text-red-700 hover:underline">
+            Crear un reporte
+          </Link>
+        </div>
+      ) : (
+        <>
+          <p className="text-xs text-gray-400 mb-4">
+            {casos.length} {casos.length === 1 ? 'caso' : 'casos'}{q ? ` · "${q}"` : ''}
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {casos.map(persona => (
+              <CasoCard key={persona.id} persona={persona} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
-  );
+  )
 }
