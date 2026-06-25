@@ -51,10 +51,10 @@ export default async function HomePage({
           Ayúdanos a encontrarlos
         </h1>
         <p className="text-gray-600 text-base leading-relaxed mb-2">
-          Tras el terremoto que sacudió a Venezuela, miles de personas quedaron desaparecidas. Sus familias las buscan desesperadamente.
+          Tras el terremoto que sacudió a nuestro país, miles de personas quedaron desaparecidas. Sus familias las buscan desesperadamente.
         </p>
         <p className="text-gray-600 text-base leading-relaxed mb-6">
-          Si conoces a alguien desaparecido, repórtalo aquí. Si sabes que fue encontrado, márcalo.
+          Si conoces a alguien desaparecido, repórtalo aquí. Si sabes que alguien fue encontrado, déjanos saber.
         </p>
         <Link
           href="/reportar"

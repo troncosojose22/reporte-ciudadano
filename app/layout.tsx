@@ -8,6 +8,9 @@ const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Reporte Ciudadano",
   description: "Reporta y busca personas desaparecidas en Venezuela. Cada reporte puede salvar una vida.",
+  icons: {
+    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇻🇪</text></svg>",
+  },
   openGraph: {
     title: "Reporte Ciudadano",
     description: "Reporta y busca personas desaparecidas en Venezuela.",
