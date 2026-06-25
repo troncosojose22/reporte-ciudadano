@@ -5,6 +5,7 @@ import ListaCasos from './components/ListaCasos'
 import { PersonaDesaparecida } from './lib/types'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { PAGE_SIZE } from './lib/constants'
 
 async function getCasos(): Promise<PersonaDesaparecida[]> {
   const supabase = getSupabaseAdmin()
@@ -13,7 +14,7 @@ async function getCasos(): Promise<PersonaDesaparecida[]> {
     .select('*')
     .neq('estado', 'removido')
     .order('creado_en', { ascending: false })
-    .limit(500)
+    .range(0, PAGE_SIZE - 1)
   return (data as PersonaDesaparecida[]) ?? []
 }
 
@@ -75,7 +76,7 @@ export default async function HomePage({
       </div>
 
       {/* Search + Grid */}
-      <ListaCasos casos={casos} />
+      <ListaCasos initialCasos={casos} />
     </div>
   )
 }

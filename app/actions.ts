@@ -1,9 +1,27 @@
 'use server'
 
 import { getSupabaseAdmin } from './lib/supabase'
+import { PAGE_SIZE } from './lib/constants'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
+
+export async function buscarPersonas(q: string, estado: string, offset: number) {
+  const supabase = getSupabaseAdmin()
+
+  let query = supabase
+    .from('personas_desaparecidas')
+    .select('*')
+    .neq('estado', 'removido')
+    .order('creado_en', { ascending: false })
+    .range(offset, offset + PAGE_SIZE - 1)
+
+  if (q.trim()) query = query.ilike('nombre', `%${q.trim()}%`)
+  if (estado !== 'todos') query = query.eq('estado', estado)
+
+  const { data } = await query
+  return data ?? []
+}
 
 export async function reportarPersona(formData: FormData) {
   const nombre = (formData.get('nombre') as string)?.trim()

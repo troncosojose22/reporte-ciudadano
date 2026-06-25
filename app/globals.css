@@ -2,7 +2,7 @@
 
 html,
 body {
-  overscroll-behavior: none;
+  overscroll-behavior-x: none;
   background: #ffffff;
   color: #111111;
   font-family: var(--font-geist-sans), system-ui, sans-serif;
