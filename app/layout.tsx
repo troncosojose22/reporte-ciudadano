@@ -15,6 +15,7 @@ export const metadata: Metadata = {
     title: "Reporte Ciudadano",
     description: "Reporta y busca personas desaparecidas en Venezuela.",
     type: "website",
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
 };
 
