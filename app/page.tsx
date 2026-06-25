@@ -1,3 +1,5 @@
+export const revalidate = 30
+
 import { getSupabaseAdmin } from './lib/supabase'
 import ListaCasos from './components/ListaCasos'
 import { PersonaDesaparecida } from './lib/types'

@@ -1,3 +1,5 @@
+export const revalidate = 30
+
 import { getSupabaseAdmin } from '../../lib/supabase'
 import { PersonaDesaparecida } from '../../lib/types'
 import { marcarEncontrado } from '../../actions'
