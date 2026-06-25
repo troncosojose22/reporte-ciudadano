@@ -1,24 +1,17 @@
 import { getSupabaseAdmin } from './lib/supabase'
-import { Suspense } from 'react'
-import CasoCard from './components/CasoCard'
-import Buscador from './components/Buscador'
+import ListaCasos from './components/ListaCasos'
 import { PersonaDesaparecida } from './lib/types'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
-async function getCasos(q: string, estado: string): Promise<PersonaDesaparecida[]> {
+async function getCasos(): Promise<PersonaDesaparecida[]> {
   const supabase = getSupabaseAdmin()
-
-  let query = supabase
+  const { data } = await supabase
     .from('personas_desaparecidas')
     .select('*')
     .neq('estado', 'removido')
     .order('creado_en', { ascending: false })
-    .limit(200)
-
-  if (q) query = query.ilike('nombre', `%${q}%`)
-  if (estado && estado !== 'todos') query = query.eq('estado', estado)
-
-  const { data } = await query
+    .limit(500)
   return (data as PersonaDesaparecida[]) ?? []
 }
 
@@ -34,13 +27,12 @@ async function getStats() {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; estado?: string }>
+  searchParams: Promise<Record<string, string>>
 }) {
   const params = await searchParams
-  const q = params.q ?? ''
-  const estado = params.estado ?? 'todos'
+  if (Object.keys(params).length > 0) redirect('/')
 
-  const [casos, stats] = await Promise.all([getCasos(q, estado), getStats()])
+  const [casos, stats] = await Promise.all([getCasos(), getStats()])
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -80,33 +72,8 @@ export default async function HomePage({
         </div>
       </div>
 
-      {/* Search */}
-      <div className="mb-6">
-        <Suspense fallback={null}>
-          <Buscador />
-        </Suspense>
-      </div>
-
-      {/* Results */}
-      {casos.length === 0 ? (
-        <div className="py-20 text-center text-gray-400">
-          <p className="text-base">No se encontraron casos{q ? ` para "${q}"` : ''}.</p>
-          <Link href="/reportar" className="mt-4 inline-block text-sm text-red-700 hover:underline">
-            Crear un reporte
-          </Link>
-        </div>
-      ) : (
-        <>
-          <p className="text-xs text-gray-400 mb-4">
-            {casos.length} {casos.length === 1 ? 'caso' : 'casos'}{q ? ` · "${q}"` : ''}
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {casos.map(persona => (
-              <CasoCard key={persona.id} persona={persona} />
-            ))}
-          </div>
-        </>
-      )}
+      {/* Search + Grid */}
+      <ListaCasos casos={casos} />
     </div>
   )
 }

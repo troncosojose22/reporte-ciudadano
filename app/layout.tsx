@@ -40,8 +40,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <footer className="border-t border-gray-200 py-6 mt-12">
           <div className="max-w-5xl mx-auto px-4 text-center text-xs text-gray-400 space-y-1">
-            <p>Si encontraste a alguien, contacta al familiar a través del caso y a las autoridades.</p>
-            <p>Los reportes son publicados directamente. Escríbenos para remover un caso incorrecto.</p>
+            <p>Si encontraste a alguien, puedes contactar al familiar a través del caso.</p>
+            <p>
+              Los reportes son publicados directamente. Para remover un caso incorrecto, escríbenos{' '}
+              <a href="mailto:troncosojose22@gmail.com" className="underline hover:text-gray-600 transition-colors">
+                aquí
+              </a>.
+            </p>
           </div>
         </footer>
       </body>
