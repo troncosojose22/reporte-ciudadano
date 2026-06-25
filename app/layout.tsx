@@ -13,8 +13,11 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Reporte Ciudadano",
+    siteName: "Reporte Ciudadano",
     description: "Reporta y busca personas desaparecidas en Venezuela.",
     type: "website",
+    url: "https://reporteciudadano.online/",
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
 };
 
